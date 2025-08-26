@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ค้นหาและฟังไฟล์เสียงตามอีเมลและวันที่</title>
+    <title>ค้นหาและฟังไฟล์เสียง</title>
     <style>
         body { font-family: 'Tahoma', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
         .container { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -20,9 +20,9 @@
 </head>
 <body>
     <div class="container">
-        <h1>ค้นหาไฟล์เสียงจากอีเมลและวันที่</h1>
+        <h1>ค้นหาและฟังไฟล์เสียง</h1>
         <div class="search-container">
-            <input type="email" id="userEmailInput" placeholder="กรอกอีเมลพนักงาน">
+            <input type="text" id="userNameInput" placeholder="กรอกอีเมล (หรือ ชื่อ-นามสกุล หากมี collection users)">
             <input type="date" id="dateInput">
             <button id="searchButton">ค้นหาไฟล์เสียง</button>
         </div>
@@ -50,16 +50,16 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
-        const userEmailInput = document.getElementById('userEmailInput');
+        const userNameInput = document.getElementById('userNameInput');
         const dateInput = document.getElementById('dateInput');
         const searchButton = document.getElementById('searchButton');
         const audioListContainer = document.getElementById('audioList');
 
         const searchUserAudios = async () => {
-            const emailToSearch = userEmailInput.value.trim();
+            const userName = userNameInput.value.trim();
             const selectedDate = dateInput.value;
             
-            if (!emailToSearch || !selectedDate) {
+            if (!userName || !selectedDate) {
                 audioListContainer.innerHTML = '<p style="text-align: center; color: red;">กรุณากรอกข้อมูลให้ครบถ้วน</p>';
                 return;
             }
@@ -67,16 +67,29 @@
             audioListContainer.innerHTML = '<p style="text-align: center;">กำลังค้นหา...</p>';
 
             try {
-                // กำหนดช่วงเวลาของวันที่ที่เลือก
+                // ** ขั้นตอนที่ 1: ค้นหา UID จากอีเมล **
+                // เนื่องจาก collections ที่เก็บเสียงมีแค่ email, uid ดังนั้นเราจึงต้องใช้อีเมลเป็นหลัก
+                // หากคุณมี collection สำหรับ user ที่เก็บชื่อ-นามสกุลด้วย จะต้องทำการค้นหาใน collection นั้นก่อน
+                const usersQuery = query(collection(db, "submissions_part1"), where("email", "==", userName));
+                const usersSnapshot = await getDocs(usersQuery);
+                
+                if (usersSnapshot.empty) {
+                    audioListContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงสำหรับอีเมลนี้</p>';
+                    return;
+                }
+                
+                const userDoc = usersSnapshot.docs[0];
+                const uid = userDoc.data().uid;
+
+                // ** ขั้นตอนที่ 2: ค้นหาไฟล์เสียงด้วย UID และช่วงวันที่ **
                 const startOfDay = new Date(selectedDate);
                 startOfDay.setHours(0, 0, 0, 0);
                 const endOfDay = new Date(selectedDate);
                 endOfDay.setHours(23, 59, 59, 999);
 
-                // สร้าง Query โดยใช้เงื่อนไข 2 อย่างพร้อมกัน: อีเมลและช่วงวันที่
                 const submissionsQuery = query(
                     collection(db, "submissions_part1"),
-                    where("email", "==", emailToSearch),
+                    where("uid", "==", uid),
                     where("timestamp", ">=", Timestamp.fromDate(startOfDay)),
                     where("timestamp", "<=", Timestamp.fromDate(endOfDay))
                 );
@@ -110,6 +123,7 @@
     </script>
 </body>
 </html>
+
 
 
 
