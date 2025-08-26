@@ -3,171 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายการไฟล์เสียง</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <title>ฟังไฟล์เสียงที่บันทึกไว้</title>
     <style>
-        body {
-            font-family: 'Tahoma', sans-serif;
-            background: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            color: #333;
-        }
-        .container {
-            width: 100%;
-            max-width: 800px;
-            background: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        h1 {
-            color: #004085;
-            margin-bottom: 20px;
-        }
-        #audioList {
-            list-style: none;
-            padding: 0;
-            margin: 20px 0;
-            text-align: left;
-        }
-        .audio-item {
-            display: flex;
-            align-items: center;
-            background: #f8f9fa;
-            padding: 15px;
-            border: 1px solid #e2e6ea;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-        .audio-item p {
-            margin: 0;
-            flex-grow: 1;
-            font-size: 1.1em;
-            color: #555;
-        }
-        audio {
-            width: 250px;
-            margin-left: 15px;
-        }
-        .message {
-            color: #6c757d;
-            font-style: italic;
-        }
+        body { font-family: 'Tahoma', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #004085; }
+        .audio-item { border-bottom: 1px solid #e0e0e0; padding: 15px 0; }
+        .audio-item:last-child { border-bottom: none; }
+        .question-text { font-weight: bold; color: #0056b3; margin-bottom: 10px; }
+        audio { width: 100%; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>รายการไฟล์เสียงของฉัน</h1>
-        <p>คุณกำลังล็อกอินด้วย: <strong id="userEmail">กำลังโหลด...</strong></p>
-        <ul id="audioList">
-            </ul>
-        <p id="loadingMessage" class="message">กำลังโหลดไฟล์เสียง...</p>
-        <p id="noFilesMessage" class="message" style="display:none;">ไม่พบไฟล์เสียงของคุณ</p>
+        <h1>ไฟล์เสียงที่บันทึกไว้</h1>
+        <div id="audioList">
+            <p style="text-align: center;">กำลังโหลดไฟล์เสียง...</p>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-        // **แก้ไขตรงนี้** ให้เป็นค่า Firebase Config ของคุณ
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        
+        // ** ต้องเปลี่ยนค่านี้ให้เป็นข้อมูลของโปรเจกต์คุณเอง **
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyA4OrZERUoxWPiShCEWVvz1MK9cYGO3_K8",
+            authDomain: "new-record-3ccd6.firebaseapp.com",
+            databaseURL: "https://new-record-3ccd6-default-rtdb.firebaseio.com",
+            projectId: "new-record-3ccd6",
+            storageBucket: "new-record-3ccd6.firebasestorage.app",
+            messagingSenderId: "1065863160189",
+            appId: "1:1065863160189:web:25313e55b0733f5e126c14",
+            measurementId: "G-JW6N2HYR58"
         };
-
+        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getDatabase(app);
+        const db = getFirestore(app);
+        const audioListContainer = document.getElementById('audioList');
 
-        // รอการยืนยันตัวตนของผู้ใช้งาน
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // ผู้ใช้ล็อกอินแล้ว
-                document.getElementById('userEmail').textContent = user.email || "ผู้ใช้งานนิรนาม";
-                fetchAudioFiles(user.uid);
-            } else {
-                // ถ้ายังไม่ล็อกอิน ให้ล็อกอินแบบนิรนาม
-                // หรือเปลี่ยนไปใช้ signInWithRedirect/PopUp ตามที่คุณต้องการ
+                // สร้าง Query เพื่อดึงเฉพาะเอกสารของผู้ใช้ปัจจุบัน
+                const submissionsQuery = query(collection(db, "submissions_part1"), where("uid", "==", user.uid));
+                
                 try {
-                    await signInAnonymously(auth);
+                    const querySnapshot = await getDocs(submissionsQuery);
+                    
+                    if (querySnapshot.empty) {
+                        audioListContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงที่บันทึกไว้</p>';
+                        return;
+                    }
+                    
+                    audioListContainer.innerHTML = ''; // ลบข้อความ "กำลังโหลด..."
+                    
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const audioItem = document.createElement('div');
+                        audioItem.className = 'audio-item';
+                        audioItem.innerHTML = `
+                            <p class="question-text"><b>ข้อที่ ${data.question}:</b> ${data.text}</p>
+                            <audio controls src="${data.audioUrl}"></audio>
+                        `;
+                        audioListContainer.appendChild(audioItem);
+                    });
                 } catch (error) {
-                    console.error("Error signing in anonymously:", error);
-                    alert("เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง");
+                    console.error("เกิดข้อผิดพลาดในการดึงไฟล์เสียง: ", error);
+                    audioListContainer.innerHTML = '<p style="text-align: center; color: red;">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
                 }
+            } else {
+                audioListContainer.innerHTML = '<p style="text-align: center;">กรุณาเข้าสู่ระบบเพื่อดูไฟล์เสียง</p>';
             }
         });
-
-        // ฟังก์ชันสำหรับดึงไฟล์เสียงจาก Realtime Database
-        async function fetchAudioFiles(userId) {
-            const loadingMessage = document.getElementById('loadingMessage');
-            const noFilesMessage = document.getElementById('noFilesMessage');
-            const audioList = document.getElementById('audioList');
-            audioList.innerHTML = ''; // Clear previous list
-
-            loadingMessage.style.display = 'block';
-            noFilesMessage.style.display = 'none';
-
-            try {
-                // สร้าง path ไปยังข้อมูลเสียงของผู้ใช้
-                const dbRef = ref(db);
-                const userAudioRef = child(dbRef, `submissions/${userId}`);
-                const snapshot = await get(userAudioRef);
-
-                if (snapshot.exists()) {
-                    const submissions = snapshot.val();
-                    let hasFiles = false;
-
-                    for (const key in submissions) {
-                        const data = submissions[key];
-                        if (data.audioUrl && data.question) {
-                            hasFiles = true;
-                            createAudioElement(data.question, data.audioUrl);
-                        }
-                    }
-
-                    if (!hasFiles) {
-                        noFilesMessage.style.display = 'block';
-                    }
-                } else {
-                    noFilesMessage.style.display = 'block';
-                }
-            } catch (error) {
-                console.error("Error fetching audio files:", error);
-                alert("เกิดข้อผิดพลาดในการดึงข้อมูล กรุณาลองใหม่อีกครั้ง");
-            } finally {
-                loadingMessage.style.display = 'none';
-            }
-        }
-
-        // ฟังก์ชันสำหรับสร้าง element HTML ของแต่ละไฟล์เสียง
-        function createAudioElement(questionText, audioUrl) {
-            const li = document.createElement('li');
-            li.className = 'audio-item';
-            
-            const p = document.createElement('p');
-            p.textContent = `คำถาม: ${questionText}`;
-            
-            const audio = document.createElement('audio');
-            audio.controls = true;
-            audio.src = audioUrl;
-
-            li.appendChild(p);
-            li.appendChild(audio);
-            
-            document.getElementById('audioList').appendChild(li);
-        }
-
     </script>
 </body>
 </html>
+
