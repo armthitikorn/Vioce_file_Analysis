@@ -19,11 +19,23 @@
         .error-message { text-align: center; color: red; }
         .hidden { display: none; }
         .success-message { text-align: center; color: green; margin-bottom: 15px; }
+        #logoutButton {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        #logoutButton:hover {
+            background-color: #c82333;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>ค้นหาและฟังไฟล์เสียงตามอีเมลและวันที่</h1>
+        <h1>ค้นหาและฟังไฟล์เสียงจากอีเมลและวันที่</h1>
         <div id="authContainer" class="auth-container">
             <p style="text-align: center;">กรุณาล็อกอินเพื่อเข้าถึง</p>
             <input type="email" id="loginEmailInput" placeholder="อีเมล">
@@ -36,6 +48,7 @@
             <input type="email" id="userEmailInput" placeholder="กรอกอีเมลพนักงาน">
             <input type="date" id="dateInput">
             <button id="searchButton">ค้นหาไฟล์เสียง</button>
+            <button id="logoutButton">ออกจากระบบ</button>
         </div>
         <div id="audioList">
             <p style="text-align: center;">กรุณาล็อกอินและค้นหา</p>
@@ -44,10 +57,11 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, collection, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
+        // ** เปลี่ยนค่านี้ให้เป็นข้อมูลของโปรเจกต์คุณเอง **
         const firebaseConfig = {
             apiKey: "AIzaSyA4OrZERUoxWPiShCEWVvz1MK9cYGO3_K8",
             authDomain: "new-record-3ccd6.firebaseapp.com",
@@ -60,7 +74,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app); // สร้าง instance สำหรับ Authentication
+        const auth = getAuth(app);
         const db = getFirestore(app);
         const storage = getStorage(app);
 
@@ -74,9 +88,9 @@
         const userEmailInput = document.getElementById('userEmailInput');
         const dateInput = document.getElementById('dateInput');
         const searchButton = document.getElementById('searchButton');
+        const logoutButton = document.getElementById('logoutButton');
         const audioListContainer = document.getElementById('audioList');
 
-        // ฟังก์ชันล็อกอิน
         loginButton.addEventListener('click', async () => {
             const email = loginEmailInput.value;
             const password = loginPasswordInput.value;
@@ -89,16 +103,17 @@
             }
         });
 
-        // ตรวจสอบสถานะการล็อกอินของผู้ใช้
+        logoutButton.addEventListener('click', async () => {
+            await signOut(auth);
+        });
+
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // ผู้ใช้ล็อกอินแล้ว: แสดงส่วนค้นหา
                 authContainer.classList.add('hidden');
                 searchSection.classList.remove('hidden');
                 userStatus.textContent = `เข้าสู่ระบบในฐานะ: ${user.email}`;
                 audioListContainer.innerHTML = '<p style="text-align: center;">กรุณากรอกข้อมูลและกดค้นหา</p>';
             } else {
-                // ผู้ใช้ยังไม่ได้ล็อกอิน: ซ่อนส่วนค้นหา
                 authContainer.classList.remove('hidden');
                 searchSection.classList.add('hidden');
                 audioListContainer.innerHTML = '<p style="text-align: center;">กรุณาล็อกอินเพื่อเข้าถึง</p>';
@@ -182,3 +197,4 @@
     </script>
 </body>
 </html>
+
