@@ -8,37 +8,46 @@
         body { font-family: 'Tahoma', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
         .container { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: #004085; }
-        .search-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-        .search-container input, .search-container button { padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
-        .search-container button { background-color: #007bff; color: white; border: none; cursor: pointer; }
-        .search-container button:hover { background-color: #0056b3; }
+        .auth-container, .search-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .auth-container input, .search-container input, .search-container button, .auth-container button { padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
+        .auth-container button, .search-container button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        .auth-container button:hover, .search-container button:hover { background-color: #0056b3; }
         .audio-item { border-bottom: 1px solid #e0e0e0; padding: 15px 0; }
         .audio-item:last-child { border-bottom: none; }
         .question-text { font-weight: bold; color: #0056b3; margin-bottom: 10px; }
         audio { width: 100%; margin-top: 10px; }
         .error-message { text-align: center; color: red; }
+        .hidden { display: none; }
+        .success-message { text-align: center; color: green; margin-bottom: 15px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>ค้นหาไฟล์เสียงจากอีเมลและวันที่</h1>
-        <div class="search-container">
+        <h1>ค้นหาและฟังไฟล์เสียงตามอีเมลและวันที่</h1>
+        <div id="authContainer" class="auth-container">
+            <p style="text-align: center;">กรุณาล็อกอินเพื่อเข้าถึง</p>
+            <input type="email" id="loginEmailInput" placeholder="อีเมล">
+            <input type="password" id="loginPasswordInput" placeholder="รหัสผ่าน">
+            <button id="loginButton">เข้าสู่ระบบ</button>
+            <p id="authError" class="error-message"></p>
+        </div>
+        <div id="searchSection" class="search-container hidden">
+            <p id="userStatus" class="success-message"></p>
             <input type="email" id="userEmailInput" placeholder="กรอกอีเมลพนักงาน">
             <input type="date" id="dateInput">
             <button id="searchButton">ค้นหาไฟล์เสียง</button>
         </div>
         <div id="audioList">
-            <p style="text-align: center;">กรุณากรอกข้อมูลและกดค้นหา</p>
+            <p style="text-align: center;">กรุณาล็อกอินและค้นหา</p>
         </div>
     </div>
 
     <script type="module">
-        // เพิ่ม Firebase Storage
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, collection, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
-        // ** ต้องเปลี่ยนค่านี้ให้เป็นข้อมูลของโปรเจกต์คุณเอง **
         const firebaseConfig = {
             apiKey: "AIzaSyA4OrZERUoxWPiShCEWVvz1MK9cYGO3_K8",
             authDomain: "new-record-3ccd6.firebaseapp.com",
@@ -51,13 +60,50 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app); // สร้าง instance สำหรับ Authentication
         const db = getFirestore(app);
-        const storage = getStorage(app); // สร้าง instance สำหรับ Storage
+        const storage = getStorage(app);
 
+        const authContainer = document.getElementById('authContainer');
+        const loginEmailInput = document.getElementById('loginEmailInput');
+        const loginPasswordInput = document.getElementById('loginPasswordInput');
+        const loginButton = document.getElementById('loginButton');
+        const authError = document.getElementById('authError');
+        const searchSection = document.getElementById('searchSection');
+        const userStatus = document.getElementById('userStatus');
         const userEmailInput = document.getElementById('userEmailInput');
         const dateInput = document.getElementById('dateInput');
         const searchButton = document.getElementById('searchButton');
         const audioListContainer = document.getElementById('audioList');
+
+        // ฟังก์ชันล็อกอิน
+        loginButton.addEventListener('click', async () => {
+            const email = loginEmailInput.value;
+            const password = loginPasswordInput.value;
+            authError.textContent = '';
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                authError.textContent = "ล็อกอินไม่สำเร็จ: " + error.message;
+                console.error("Login error:", error);
+            }
+        });
+
+        // ตรวจสอบสถานะการล็อกอินของผู้ใช้
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // ผู้ใช้ล็อกอินแล้ว: แสดงส่วนค้นหา
+                authContainer.classList.add('hidden');
+                searchSection.classList.remove('hidden');
+                userStatus.textContent = `เข้าสู่ระบบในฐานะ: ${user.email}`;
+                audioListContainer.innerHTML = '<p style="text-align: center;">กรุณากรอกข้อมูลและกดค้นหา</p>';
+            } else {
+                // ผู้ใช้ยังไม่ได้ล็อกอิน: ซ่อนส่วนค้นหา
+                authContainer.classList.remove('hidden');
+                searchSection.classList.add('hidden');
+                audioListContainer.innerHTML = '<p style="text-align: center;">กรุณาล็อกอินเพื่อเข้าถึง</p>';
+            }
+        });
 
         const searchUserAudios = async () => {
             const emailToSearch = userEmailInput.value.trim();
@@ -90,12 +136,11 @@
                     return;
                 }
                 
-                audioListContainer.innerHTML = ''; // Clear previous results
+                audioListContainer.innerHTML = '';
 
-                // ใช้ Promise.all เพื่อรอการดึง URL ทั้งหมดให้เสร็จสิ้นพร้อมกัน
                 const audioPromises = querySnapshot.docs.map(async (doc) => {
                     const data = doc.data();
-                    const audioFilePath = data.audioUrl; // สมมติว่า field นี้เก็บ path ของไฟล์ใน Storage
+                    const audioFilePath = data.audioUrl;
                     
                     if (audioFilePath) {
                         const audioRef = ref(storage, audioFilePath);
@@ -104,7 +149,7 @@
                             return { data, url };
                         } catch (error) {
                             console.error("Error getting download URL for file:", audioFilePath, error);
-                            return null; // ส่งค่า null เพื่อกรองออกทีหลัง
+                            return null;
                         }
                     }
                     return null;
@@ -127,7 +172,6 @@
                     `;
                     audioListContainer.appendChild(audioItem);
                 });
-
             } catch (error) {
                 console.error("เกิดข้อผิดพลาดในการค้นหา: ", error);
                 audioListContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
@@ -138,10 +182,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
