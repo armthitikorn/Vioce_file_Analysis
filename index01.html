@@ -1,115 +1,144 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ค้นหาและฟังไฟล์เสียงตามอีเมลและวันที่</title>
-    <style>
-        body { font-family: 'Tahoma', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
-        .container { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #004085; }
-        .search-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-        .search-container input, .search-container button { padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
-        .search-container button { background-color: #007bff; color: white; border: none; cursor: pointer; }
-        .search-container button:hover { background-color: #0056b3; }
-        .audio-item { border-bottom: 1px solid #e0e0e0; padding: 15px 0; }
-        .audio-item:last-child { border-bottom: none; }
-        .question-text { font-weight: bold; color: #0056b3; margin-bottom: 10px; }
-        audio { width: 100%; margin-top: 10px; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ค้นหาและฟังไฟล์เสียงตามอีเมลและวันที่</title>
+    <style>
+        body { font-family: 'Tahoma', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #004085; }
+        .search-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .search-container input, .search-container button { padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
+        .search-container button { background-color: #007bff; color: white; border: none; cursor: pointer; }
+        .search-container button:hover { background-color: #0056b3; }
+        .audio-item { border-bottom: 1px solid #e0e0e0; padding: 15px 0; }
+        .audio-item:last-child { border-bottom: none; }
+        .question-text { font-weight: bold; color: #0056b3; margin-bottom: 10px; }
+        audio { width: 100%; margin-top: 10px; }
+        .error-message { text-align: center; color: red; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>ค้นหาไฟล์เสียงจากอีเมลและวันที่</h1>
-        <div class="search-container">
-            <input type="email" id="userEmailInput" placeholder="กรอกอีเมลพนักงาน">
-            <input type="date" id="dateInput">
-            <button id="searchButton">ค้นหาไฟล์เสียง</button>
-        </div>
-        <div id="audioList">
-            <p style="text-align: center;">กรุณากรอกข้อมูลและกดค้นหา</p>
-        </div>
-    </div>
+    <div class="container">
+        <h1>ค้นหาไฟล์เสียงจากอีเมลและวันที่</h1>
+        <div class="search-container">
+            <input type="email" id="userEmailInput" placeholder="กรอกอีเมลพนักงาน">
+            <input type="date" id="dateInput">
+            <button id="searchButton">ค้นหาไฟล์เสียง</button>
+        </div>
+        <div id="audioList">
+            <p style="text-align: center;">กรุณากรอกข้อมูลและกดค้นหา</p>
+        </div>
+    </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getFirestore, collection, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-        
-        // ** ต้องเปลี่ยนค่านี้ให้เป็นข้อมูลของโปรเจกต์คุณเอง **
-        const firebaseConfig = {
-            apiKey: "AIzaSyA4OrZERUoxWPiShCEWVvz1MK9cYGO3_K8",
-            authDomain: "new-record-3ccd6.firebaseapp.com",
-            databaseURL: "https://new-record-3ccd6-default-rtdb.firebaseio.com",
-            projectId: "new-record-3ccd6",
-            storageBucket: "new-record-3ccd6.firebasestorage.app",
-            messagingSenderId: "1065863160189",
-            appId: "1:1065863160189:web:25313e55b0733f5e126c14",
-            measurementId: "G-JW6N2HYR58"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        const userEmailInput = document.getElementById('userEmailInput');
-        const dateInput = document.getElementById('dateInput');
-        const searchButton = document.getElementById('searchButton');
-        const audioListContainer = document.getElementById('audioList');
+    <script type="module">
+        // เพิ่ม Firebase Storage
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
-        const searchUserAudios = async () => {
-            const emailToSearch = userEmailInput.value.trim();
-            const selectedDate = dateInput.value;
-            
-            if (!emailToSearch || !selectedDate) {
-                audioListContainer.innerHTML = '<p style="text-align: center; color: red;">กรุณากรอกข้อมูลให้ครบถ้วน</p>';
-                return;
-            }
+        // ** ต้องเปลี่ยนค่านี้ให้เป็นข้อมูลของโปรเจกต์คุณเอง **
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4OrZERUoxWPiShCEWVvz1MK9cYGO3_K8",
+            authDomain: "new-record-3ccd6.firebaseapp.com",
+            databaseURL: "https://new-record-3ccd6-default-rtdb.firebaseio.com",
+            projectId: "new-record-3ccd6",
+            storageBucket: "new-record-3ccd6.firebasestorage.app",
+            messagingSenderId: "1065863160189",
+            appId: "1:1065863160189:web:25313e55b0733f5e126c14",
+            measurementId: "G-JW6N2HYR58"
+        };
 
-            audioListContainer.innerHTML = '<p style="text-align: center;">กำลังค้นหา...</p>';
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app); // สร้าง instance สำหรับ Storage
 
-            try {
-                // กำหนดช่วงเวลาของวันที่ที่เลือก
-                const startOfDay = new Date(selectedDate);
-                startOfDay.setHours(0, 0, 0, 0);
-                const endOfDay = new Date(selectedDate);
-                endOfDay.setHours(23, 59, 59, 999);
+        const userEmailInput = document.getElementById('userEmailInput');
+        const dateInput = document.getElementById('dateInput');
+        const searchButton = document.getElementById('searchButton');
+        const audioListContainer = document.getElementById('audioList');
 
-                // สร้าง Query โดยใช้เงื่อนไข 2 อย่างพร้อมกัน: อีเมลและช่วงวันที่
-                const submissionsQuery = query(
-                    collection(db, "submissions_part1"),
-                    where("email", "==", emailToSearch),
-                    where("timestamp", ">=", Timestamp.fromDate(startOfDay)),
-                    where("timestamp", "<=", Timestamp.fromDate(endOfDay))
-                );
+        const searchUserAudios = async () => {
+            const emailToSearch = userEmailInput.value.trim();
+            const selectedDate = dateInput.value;
+            
+            if (!emailToSearch || !selectedDate) {
+                audioListContainer.innerHTML = '<p class="error-message">กรุณากรอกข้อมูลให้ครบถ้วน</p>';
+                return;
+            }
 
-                const querySnapshot = await getDocs(submissionsQuery);
+            audioListContainer.innerHTML = '<p style="text-align: center;">กำลังค้นหา...</p>';
 
-                if (querySnapshot.empty) {
-                    audioListContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงสำหรับอีเมลนี้ในวันที่เลือก</p>';
-                    return;
-                }
-                
-                audioListContainer.innerHTML = ''; // ล้างพื้นที่แสดงผลเดิม
-                
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const audioItem = document.createElement('div');
-                    audioItem.className = 'audio-item';
-                    audioItem.innerHTML = `
-                        <p class="question-text"><b>ข้อที่ ${data.question}:</b> ${data.text}</p>
-                        <audio controls src="${data.audioUrl}"></audio>
-                    `;
-                    audioListContainer.appendChild(audioItem);
-                });
-            } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการค้นหา: ", error);
-                audioListContainer.innerHTML = '<p style="text-align: center; color: red;">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
-            }
-        };
+            try {
+                const startOfDay = new Date(selectedDate);
+                startOfDay.setHours(0, 0, 0, 0);
+                const endOfDay = new Date(selectedDate);
+                endOfDay.setHours(23, 59, 59, 999);
 
-        searchButton.addEventListener('click', searchUserAudios);
-    </script>
+                const submissionsQuery = query(
+                    collection(db, "submissions_part1"),
+                    where("email", "==", emailToSearch),
+                    where("timestamp", ">=", Timestamp.fromDate(startOfDay)),
+                    where("timestamp", "<=", Timestamp.fromDate(endOfDay))
+                );
+
+                const querySnapshot = await getDocs(submissionsQuery);
+
+                if (querySnapshot.empty) {
+                    audioListContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงสำหรับอีเมลนี้ในวันที่เลือก</p>';
+                    return;
+                }
+                
+                audioListContainer.innerHTML = ''; // Clear previous results
+
+                // ใช้ Promise.all เพื่อรอการดึง URL ทั้งหมดให้เสร็จสิ้นพร้อมกัน
+                const audioPromises = querySnapshot.docs.map(async (doc) => {
+                    const data = doc.data();
+                    const audioFilePath = data.audioUrl; // สมมติว่า field นี้เก็บ path ของไฟล์ใน Storage
+                    
+                    if (audioFilePath) {
+                        const audioRef = ref(storage, audioFilePath);
+                        try {
+                            const url = await getDownloadURL(audioRef);
+                            return { data, url };
+                        } catch (error) {
+                            console.error("Error getting download URL for file:", audioFilePath, error);
+                            return null; // ส่งค่า null เพื่อกรองออกทีหลัง
+                        }
+                    }
+                    return null;
+                });
+
+                const audioResults = (await Promise.all(audioPromises)).filter(item => item !== null);
+
+                if (audioResults.length === 0) {
+                    audioListContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงที่สามารถโหลดได้</p>';
+                    return;
+                }
+
+                audioResults.forEach(result => {
+                    const { data, url } = result;
+                    const audioItem = document.createElement('div');
+                    audioItem.className = 'audio-item';
+                    audioItem.innerHTML = `
+                        <p class="question-text"><b>ข้อที่ ${data.question}:</b> ${data.text}</p>
+                        <audio controls src="${url}"></audio>
+                    `;
+                    audioListContainer.appendChild(audioItem);
+                });
+
+            } catch (error) {
+                console.error("เกิดข้อผิดพลาดในการค้นหา: ", error);
+                audioListContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
+            }
+        };
+
+        searchButton.addEventListener('click', searchUserAudios);
+    </script>
 </body>
 </html>
+
 
 
 
