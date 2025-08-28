@@ -59,7 +59,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, collection, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+        // ไม่จำเป็นต้อง import getStorage และ ref และ getDownloadURL ถ้า data.audioUrl เป็น download URL โดยตรง
+        // import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
         // ** เปลี่ยนค่านี้ให้เป็นข้อมูลของโปรเจกต์คุณเอง **
         const firebaseConfig = {
@@ -76,7 +77,8 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const storage = getStorage(app);
+        // เนื่องจากเราจะใช้ data.audioUrl โดยตรง จึงไม่จำเป็นต้องใช้ getStorage ในตอนนี้
+        // const storage = getStorage(app);
 
         const authContainer = document.getElementById('authContainer');
         const loginEmailInput = document.getElementById('loginEmailInput');
@@ -156,25 +158,23 @@
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
                     
-                    // ** สร้าง path ใหม่โดยใช้ UID และชื่อไฟล์จากข้อมูลใน Firestore **
-                    const audioFileName = data.audioUrl.split('/').pop();
-                    const audioRef = ref(storage, `audios/${data.uid}/${audioFileName}`);
-                    
-                    getDownloadURL(audioRef).then(url => {
+                    // ** การแก้ไข: ใช้ data.audioUrl โดยตรงเป็น src ของ audio tag **
+                    // ไม่จำเป็นต้องสร้าง audioRef และเรียก getDownloadURL ซ้ำอีก
+                    if (data.audioUrl) {
                         const audioItem = document.createElement('div');
                         audioItem.className = 'audio-item';
                         audioItem.innerHTML = `
-                            <p class="question-text"><b>ข้อที่ ${data.question}:</b> ${data.text}</p>
-                            <audio controls src="${url}"></audio>
+                            <p class="question-text"><b>ข้อที่ ${data.question || 'N/A'}:</b> ${data.text || 'ไม่มีคำอธิบาย'}</p>
+                            <audio controls src="${data.audioUrl}"></audio>
                         `;
                         audioListContainer.appendChild(audioItem);
-                    }).catch(error => {
-                        console.error("Error getting download URL for file:", audioFileName, error);
+                    } else {
+                        console.warn("Document found without audioUrl:", doc.id, data);
                         const errorMessage = document.createElement('p');
                         errorMessage.className = 'error-message';
-                        errorMessage.textContent = `ไม่พบไฟล์เสียงสำหรับคำถามข้อที่ ${data.question}`;
+                        errorMessage.textContent = `ไม่พบ URL ไฟล์เสียงสำหรับคำถามข้อที่ ${data.question || 'N/A'}`;
                         audioListContainer.appendChild(errorMessage);
-                    });
+                    }
                 });
 
             } catch (error) {
@@ -187,5 +187,6 @@
     </script>
 </body>
 </html>
+
 
 
