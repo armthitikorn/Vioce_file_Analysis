@@ -55,138 +55,106 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-        // ไม่จำเป็นต้อง import getStorage และ ref และ getDownloadURL ถ้า data.audioUrl เป็น download URL โดยตรง
-        // import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+   <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getFirestore, collection, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
-        // ** เปลี่ยนค่านี้ให้เป็นข้อมูลของโปรเจกต์คุณเอง **
-        const firebaseConfig = {
-            apiKey: "AIzaSyA4OrZERUoxWPiShCEWVvz1MK9cYGO3_K8",
-            authDomain: "new-record-3ccd6.firebaseapp.com",
-            databaseURL: "https://new-record-3ccd6-default-rtdb.firebaseio.com",
-            projectId: "new-record-3ccd6",
-            storageBucket: "new-record-3ccd6.firebasestorage.app",
-            messagingSenderId: "1065863160189",
-            appId: "1:1065863160189:web:25313e55b0733f5e126c14",
-            measurementId: "G-JW6N2HYR58"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyA4OrZERUoxWPiShCEWVvz1MK9cYGO3_K8",
+        authDomain: "new-record-3ccd6.firebaseapp.com",
+        databaseURL: "https://new-record-3ccd6-default-rtdb.firebaseio.com",
+        projectId: "new-record-3ccd6",
+        storageBucket: "new-record-3ccd6.appspot.com",  // ✅ แก้ตรงนี้
+        messagingSenderId: "1065863160189",
+        appId: "1:1065863160189:web:25313e55b0733f5e126c14",
+        measurementId: "G-JW6N2HYR58"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        // เนื่องจากเราจะใช้ data.audioUrl โดยตรง จึงไม่จำเป็นต้องใช้ getStorage ในตอนนี้
-        // const storage = getStorage(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
 
-        const authContainer = document.getElementById('authContainer');
-        const loginEmailInput = document.getElementById('loginEmailInput');
-        const loginPasswordInput = document.getElementById('loginPasswordInput');
-        const loginButton = document.getElementById('loginButton');
-        const authError = document.getElementById('authError');
-        const searchSection = document.getElementById('searchSection');
-        const userStatus = document.getElementById('userStatus');
-        const userEmailInput = document.getElementById('userEmailInput');
-        const dateInput = document.getElementById('dateInput');
-        const searchButton = document.getElementById('searchButton');
-        const logoutButton = document.getElementById('logoutButton');
+    const searchUserAudios = async () => {
+        const emailToSearch = document.getElementById('userEmailInput').value.trim();
+        const selectedDate = document.getElementById('dateInput').value;
         const audioListContainer = document.getElementById('audioList');
 
-        loginButton.addEventListener('click', async () => {
-            const email = loginEmailInput.value;
-            const password = loginPasswordInput.value;
-            authError.textContent = '';
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                authError.textContent = "ล็อกอินไม่สำเร็จ: " + error.message;
-                console.error("Login error:", error);
-            }
-        });
+        if (!emailToSearch || !selectedDate) {
+            audioListContainer.innerHTML = '<p class="error-message">กรุณากรอกข้อมูลให้ครบถ้วน</p>';
+            return;
+        }
 
-        logoutButton.addEventListener('click', async () => {
-            await signOut(auth);
-        });
+        audioListContainer.innerHTML = '<p style="text-align: center;">กำลังค้นหา...</p>';
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                authContainer.classList.add('hidden');
-                searchSection.classList.remove('hidden');
-                userStatus.textContent = `เข้าสู่ระบบในฐานะ: ${user.email}`;
-                audioListContainer.innerHTML = '<p style="text-align: center;">กรุณากรอกข้อมูลและกดค้นหา</p>';
-            } else {
-                authContainer.classList.remove('hidden');
-                searchSection.classList.add('hidden');
-                audioListContainer.innerHTML = '<p style="text-align: center;">กรุณาล็อกอินเพื่อเข้าถึง</p>';
-            }
-        });
+        try {
+            const startOfDay = new Date(selectedDate);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(selectedDate);
+            endOfDay.setHours(23, 59, 59, 999);
 
-        const searchUserAudios = async () => {
-            const emailToSearch = userEmailInput.value.trim();
-            const selectedDate = dateInput.value;
-            
-            if (!emailToSearch || !selectedDate) {
-                audioListContainer.innerHTML = '<p class="error-message">กรุณากรอกข้อมูลให้ครบถ้วน</p>';
+            const submissionsQuery = query(
+                collection(db, "submissions_part1"),
+                where("email", "==", emailToSearch),
+                where("timestamp", ">=", Timestamp.fromDate(startOfDay)),
+                where("timestamp", "<=", Timestamp.fromDate(endOfDay))
+            );
+
+            const querySnapshot = await getDocs(submissionsQuery);
+            if (querySnapshot.empty) {
+                audioListContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงสำหรับอีเมลนี้ในวันที่เลือก</p>';
                 return;
             }
 
-            audioListContainer.innerHTML = '<p style="text-align: center;">กำลังค้นหา...</p>';
+            audioListContainer.innerHTML = '';
 
-            try {
-                const startOfDay = new Date(selectedDate);
-                startOfDay.setHours(0, 0, 0, 0);
-                const endOfDay = new Date(selectedDate);
-                endOfDay.setHours(23, 59, 59, 999);
+            querySnapshot.forEach(async (doc) => {
+                const data = doc.data();
+                const audioItem = document.createElement('div');
+                audioItem.className = 'audio-item';
 
-                const submissionsQuery = query(
-                    collection(db, "submissions_part1"),
-                    where("email", "==", emailToSearch),
-                    where("timestamp", ">=", Timestamp.fromDate(startOfDay)),
-                    where("timestamp", "<=", Timestamp.fromDate(endOfDay))
-                );
+                if (data.audioUrl) {
+                    try {
+                        let audioSrc = "";
 
-                const querySnapshot = await getDocs(submissionsQuery);
+                        // ถ้า audioUrl ขึ้นต้นด้วย https แปลว่าเป็นลิงก์ตรง ใช้ได้เลย
+                        if (data.audioUrl.startsWith("http")) {
+                            audioSrc = data.audioUrl;
+                        } else {
+                            // ถ้าเป็น path เฉย ๆ เช่น "recordings/user1/file1.webm"
+                            const audioRef = ref(storage, data.audioUrl);
+                            audioSrc = await getDownloadURL(audioRef);
+                        }
 
-                if (querySnapshot.empty) {
-                    audioListContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงสำหรับอีเมลนี้ในวันที่เลือก</p>';
-                    return;
-                }
-                
-                audioListContainer.innerHTML = '';
-
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    
-                    // ** การแก้ไข: ใช้ data.audioUrl โดยตรงเป็น src ของ audio tag **
-                    // ไม่จำเป็นต้องสร้าง audioRef และเรียก getDownloadURL ซ้ำอีก
-                    if (data.audioUrl) {
-                        const audioItem = document.createElement('div');
-                        audioItem.className = 'audio-item';
                         audioItem.innerHTML = `
                             <p class="question-text"><b>ข้อที่ ${data.question || 'N/A'}:</b> ${data.text || 'ไม่มีคำอธิบาย'}</p>
-                            <audio controls src="${data.audioUrl}"></audio>
+                            <audio controls src="${audioSrc}"></audio>
                         `;
-                        audioListContainer.appendChild(audioItem);
-                    } else {
-                        console.warn("Document found without audioUrl:", doc.id, data);
-                        const errorMessage = document.createElement('p');
-                        errorMessage.className = 'error-message';
-                        errorMessage.textContent = `ไม่พบ URL ไฟล์เสียงสำหรับคำถามข้อที่ ${data.question || 'N/A'}`;
-                        audioListContainer.appendChild(errorMessage);
+                    } catch (error) {
+                        console.error("ไม่สามารถโหลดไฟล์เสียงได้:", error);
+                        audioItem.innerHTML = `<p class="error-message">โหลดไฟล์เสียงไม่สำเร็จ (${data.question || 'N/A'})</p>`;
                     }
-                });
+                } else {
+                    audioItem.innerHTML = `<p class="error-message">ไม่พบ path/URL ของไฟล์เสียง (${data.question || 'N/A'})</p>`;
+                }
 
-            } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการค้นหา: ", error);
-                audioListContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
-            }
-        };
+                audioListContainer.appendChild(audioItem);
+            });
 
-        searchButton.addEventListener('click', searchUserAudios);
-    </script>
+        } catch (error) {
+            console.error("เกิดข้อผิดพลาดในการค้นหา: ", error);
+            audioListContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
+        }
+    };
+
+    document.getElementById('searchButton').addEventListener('click', searchUserAudios);
+</script>
+
 </body>
 </html>
+
 
 
 
