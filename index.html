@@ -32,7 +32,7 @@
 
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
             background-color: var(--card-background);
             padding: 40px;
             border-radius: 12px;
@@ -206,7 +206,17 @@
                 <label for="dateSelect">เลือกวันที่ส่งงาน:</label>
                 <select id="dateSelect"></select>
             </div>
-            <button id="searchButton" onclick="loadAudio()">ค้นหาไฟล์เสียง</button>
+
+            <div class="input-group">
+                <label for="partSelect">เลือกส่วนของงาน:</label>
+                <select id="partSelect">
+                    <option value="" disabled selected>-- เลือกส่วนของงาน --</option>
+                    <option value="submissions_part1">Part 1</option>
+                    <option value="submissions_part2">Part 2</option>
+                    <option value="submissions_part3">Part 3</option>
+                </select>
+            </div>
+            <button id="searchButton">ค้นหาไฟล์เสียง</button>
             
             <button id="logoutButton" class="logout-button">ออกจากระบบ</button>
 
@@ -235,9 +245,6 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // เปลี่ยนเฉพาะ collection ที่ต้องการ
-        const collectionName = "submission Part 1";
-
         // DOM Elements
         const loginSection = document.getElementById('loginSection');
         const dashboardSection = document.getElementById('dashboardSection');
@@ -248,8 +255,10 @@
         const logoutButton = document.getElementById('logoutButton');
         const emailSelect = document.getElementById("emailSelect");
         const dateSelect = document.getElementById("dateSelect");
+        const partSelect = document.getElementById("partSelect");
         const audioContainer = document.getElementById("audioContainer");
         const userStatus = document.getElementById("userStatus");
+        const searchButton = document.getElementById("searchButton");
 
         // ------------------ Authentication ------------------
         loginButton.addEventListener('click', async () => {
@@ -273,30 +282,109 @@
                 dashboardSection.style.display = 'flex';
                 dashboardSection.style.flexDirection = 'column';
                 userStatus.textContent = `เข้าสู่ระบบในฐานะ: ${user.email}`;
-                loadEmails();
             } else {
                 loginSection.style.display = 'flex';
                 dashboardSection.style.display = 'none';
                 audioContainer.innerHTML = '';
             }
         });
-
+        
         // ------------------ Data Loading Functions ------------------
+
+        // เพิ่ม Event Listener ให้กับ searchButton
+        searchButton.addEventListener('click', async () => {
+            const email = emailSelect.value;
+            const dateStr = dateSelect.value;
+            const part = partSelect.value;
+            
+            if (!email || !dateStr || !part) {
+                audioContainer.innerHTML = '<p class="error-message">กรุณาเลือกอีเมล วันที่ และส่วนของงานให้ครบถ้วน</p>';
+                return;
+            }
+
+            audioContainer.innerHTML = '<p style="text-align: center;">กำลังค้นหาไฟล์เสียง...</p>';
+
+            const [day, month, year] = dateStr.split('/');
+            const selectedDate = new Date(`${year}-${month}-${day}`);
+            const startOfDay = Timestamp.fromDate(new Date(selectedDate.setHours(0, 0, 0, 0)));
+            const endOfDay = Timestamp.fromDate(new Date(selectedDate.setHours(23, 59, 59, 999)));
+
+            try {
+                let foundAudios = false;
+                audioContainer.innerHTML = '';
+                
+                const q = query(
+                    collection(db, part),
+                    where("email", "==", email),
+                    where("timestamp", ">=", startOfDay),
+                    where("timestamp", "<=", endOfDay)
+                );
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    foundAudios = true;
+                    const section = document.createElement("div");
+                    section.innerHTML = `<h3>📂 ${part}</h3>`;
+                    audioContainer.appendChild(section);
+
+                    const audioItems = [];
+                    snapshot.forEach(doc => {
+                        audioItems.push(doc.data());
+                    });
+                    
+                    audioItems.sort((a, b) => (a.question || 0) - (b.question || 0));
+
+                    for (const data of audioItems) {
+                        const question = data.text || 'ไม่มีข้อความ';
+                        const audioURL = data.audioUrl;
+                        
+                        if (audioURL) {
+                            const card = document.createElement("div");
+                            card.className = 'audio-item';
+                            card.innerHTML = `
+                                <p><b>คำถามที่ ${data.question || 'N/A'}</b>: ${question}</p>
+                                <audio controls src="${audioURL}"></audio><br>
+                                <a href="${audioURL}" download="${data.uid}_${part}_answer${data.question}.mp4" class="audio-link">⬇ ดาวน์โหลด</a>
+                            `;
+                            section.appendChild(card);
+                        } else {
+                            const errorCard = document.createElement("p");
+                            errorCard.className = 'error-message';
+                            errorCard.textContent = `ไม่พบไฟล์เสียงสำหรับคำถามที่ ${data.question || 'N/A'}`;
+                            section.appendChild(errorCard);
+                        }
+                    }
+                }
+
+                if (!foundAudios) {
+                    audioContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงสำหรับอีเมลนี้ในวันที่เลือก</p>';
+                }
+
+            } catch (err) {
+                console.error("เกิดข้อผิดพลาดในการค้นหา:", err);
+                audioContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
+            }
+        });
+
+        // ฟังก์ชันสำหรับโหลดอีเมลและวันที่ (มีการปรับปรุง)
         async function loadEmails() {
             emailSelect.innerHTML = '<option value="" disabled selected>-- กำลังโหลดอีเมล --</option>';
             emailSelect.disabled = true;
             let emails = new Set();
             try {
-                const submissionsRef = collection(db, collectionName);
-                const snapshot = await getDocs(submissionsRef);
-                snapshot.forEach(doc => {
-                    const email = doc.data()["อีเมล"];
-                    if (email) emails.add(email);
-                });
+                // โหลดจากทุก collection ที่เกี่ยวข้อง
+                const collections = ["submissions_part1", "submissions_part2", "submissions_part3"];
+                for (const col of collections) {
+                    const snapshot = await getDocs(collection(db, col));
+                    snapshot.forEach(doc => {
+                        const email = doc.data().email;
+                        if (email) emails.add(email);
+                    });
+                }
                 
                 if (emails.size === 0) {
                     emailSelect.innerHTML = '<option value="" disabled selected>-- ไม่พบอีเมล --</option>';
-                    audioContainer.innerHTML = '<p class="error-message">ไม่พบข้อมูลอีเมลในคอลเลกชัน ' + collectionName + '</p>';
+                    audioContainer.innerHTML = '<p class="error-message">ไม่พบข้อมูลอีเมลในระบบ</p>';
                     return;
                 }
 
@@ -318,6 +406,7 @@
         emailSelect.addEventListener('change', () => {
             dateSelect.innerHTML = '<option value="" disabled selected>-- เลือกวันที่ --</option>';
             audioContainer.innerHTML = '';
+            partSelect.value = "";
             loadDates(emailSelect.value);
         });
 
@@ -326,15 +415,18 @@
             dateSelect.disabled = true;
             let dates = new Set();
             try {
-                const q = query(collection(db, collectionName), where("อีเมล", "==", email));
-                const snapshot = await getDocs(q);
-                snapshot.forEach(doc => {
-                    const ts = doc.data()["ประทับเวลา"];
-                    if (ts instanceof Timestamp) {
-                        const date = new Date(ts.seconds * 1000).toLocaleDateString("th-TH");
-                        dates.add(date);
-                    }
-                });
+                 const collections = ["submissions_part1", "submissions_part2", "submissions_part3"];
+                for (const col of collections) {
+                    const q = query(collection(db, col), where("email", "==", email));
+                    const snapshot = await getDocs(q);
+                    snapshot.forEach(doc => {
+                        const ts = doc.data().timestamp;
+                        if (ts instanceof Timestamp) {
+                            const date = new Date(ts.seconds * 1000).toLocaleDateString("th-TH");
+                            dates.add(date);
+                        }
+                    });
+                }
 
                 dateSelect.innerHTML = '<option value="" disabled selected>-- เลือกวันที่ --</option>';
                 if (dates.size > 0) {
@@ -353,83 +445,7 @@
                 console.error("Load dates error:", err);
             }
         }
-
-        window.loadAudio = async function() {
-            const email = emailSelect.value;
-            const dateStr = dateSelect.value;
-            if (!email || !dateStr) {
-                audioContainer.innerHTML = '<p class="error-message">กรุณาเลือกอีเมลและวันที่ให้ครบถ้วน</p>';
-                return;
-            }
-            audioContainer.innerHTML = '<p style="text-align: center;">กำลังค้นหาไฟล์เสียง...</p>';
-
-            const [day, month, year] = dateStr.split('/');
-            const selectedDate = new Date(`${year}-${month}-${day}`);
-            const startOfDay = Timestamp.fromDate(new Date(selectedDate.setHours(0, 0, 0, 0)));
-            const endOfDay = Timestamp.fromDate(new Date(selectedDate.setHours(23, 59, 59, 999)));
-
-            try {
-                let foundAudios = false;
-                audioContainer.innerHTML = '';
-                
-                const q = query(
-                    collection(db, collectionName),
-                    where("อีเมล", "==", email),
-                    where("ประทับเวลา", ">=", startOfDay),
-                    where("ประทับเวลา", "<=", endOfDay)
-                );
-                const snapshot = await getDocs(q);
-                
-                if (!snapshot.empty) {
-                    foundAudios = true;
-                    const section = document.createElement("div");
-                    section.innerHTML = `<h3>📂 ${collectionName}</h3>`;
-                    audioContainer.appendChild(section);
-
-                    const audioItems = [];
-                    snapshot.forEach(doc => {
-                        audioItems.push(doc.data());
-                    });
-                    
-                    // Sort audio items by question number
-                    audioItems.sort((a, b) => (a["คำถาม"] || 0) - (b["คำถาม"] || 0));
-
-                    for (const data of audioItems) {
-                        const folderId = data["ยูไอดี"];
-                        const fileName = data["URL เสียง"];
-                        const filePath = `ไฟล์เสียง/${folderId}/${fileName}`;
-                        console.log("Path ที่โค้ดกำลังจะใช้:", filePath);
-                        const audioRef = ref(storage, filePath);
-                        
-                        try {
-                            const audioURL = await getDownloadURL(audioRef);
-                            const card = document.createElement("div");
-                            card.className = 'audio-item';
-                            card.innerHTML = `
-                                <p><b>คำถามที่ ${data["คำถาม"] || 'N/A'}</b>: ${data["ข้อความ"] || 'ไม่มีข้อความ'}</p>
-                                <audio controls src="${audioURL}"></audio><br>
-                                <a href="${audioURL}" download="${fileName}" class="audio-link">⬇ ดาวน์โหลด</a>
-                            `;
-                            section.appendChild(card);
-                        } catch (err) {
-                            console.error(`โหลดไฟล์เสียง ${fileName} ล้มเหลว:`, err);
-                            const errorCard = document.createElement("p");
-                            errorCard.className = 'error-message';
-                            errorCard.textContent = `ไม่พบไฟล์เสียงสำหรับคำถามที่ ${data["คำถาม"] || 'N/A'}`;
-                            section.appendChild(errorCard);
-                        }
-                    }
-                }
-
-                if (!foundAudios) {
-                    audioContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงสำหรับอีเมลนี้ในวันที่เลือก</p>';
-                }
-
-            } catch (err) {
-                console.error("เกิดข้อผิดพลาดในการค้นหา:", err);
-                audioContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
-            }
-        }
     </script>
 </body>
 </html>
+
