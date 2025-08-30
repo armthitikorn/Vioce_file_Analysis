@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard หัวหน้า</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+
+    // 🔹 Config Firebase ของคุณเอง
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_MSG_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    const collectionNames = [
+      "การส่งงาน_ตอนที่ 1",
+      "การส่งงาน_ตอนที่ 2",
+      "การส่งงาน_ตอนที่ 3"
+    ];
+
+    // โหลดอีเมลทั้งหมด
+    async function loadEmails() {
+      let emails = new Set();
+      for (let col of collectionNames) {
+        const submissionsRef = collection(db, col);
+        const snapshot = await getDocs(submissionsRef);
+        snapshot.forEach(doc => {
+          if (doc.data()["อีเมล"]) {
+            emails.add(doc.data()["อีเมล"]);
+          }
+        });
+      }
+
+      const emailSelect = document.getElementById("emailSelect");
+      emails.forEach(email => {
+        const opt = document.createElement("option");
+        opt.value = email;
+        opt.textContent = email;
+        emailSelect.appendChild(opt);
+      });
+    }
+
+    // โหลดวันที่ตามอีเมล
+    async function loadDates() {
+      const email = document.getElementById("emailSelect").value;
+      let dates = new Set();
+
+      for (let col of collectionNames) {
+        const submissionsRef = collection(db, col);
+        const q = query(submissionsRef, where("อีเมล", "==", email));
+        const snapshot = await getDocs(q);
+
+        snapshot.forEach(doc => {
+          const ts = doc.data()["ประทับเวลา"];
+          if (ts) {
+            const date = new Date(ts.seconds * 1000).toLocaleDateString("th-TH");
+            dates.add(date);
+          }
+        });
+      }
+
+      const dateSelect = document.getElementById("dateSelect");
+      dateSelect.innerHTML = "";
+      dates.forEach(date => {
+        const opt = document.createElement("option");
+        opt.value = date;
+        opt.textContent = date;
+        dateSelect.appendChild(opt);
+      });
+    }
+
+    // โหลดไฟล์เสียงทุกตอน
+    async function loadAudio() {
+      const email = document.getElementById("emailSelect").value;
+      const date = document.getElementById("dateSelect").value;
+      const container = document.getElementById("audioContainer");
+      container.innerHTML = "";
+
+      for (let col of collectionNames) {
+        const submissionsRef = collection(db, col);
+        const q = query(submissionsRef, where("อีเมล", "==", email));
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+          const section = document.createElement("div");
+          section.innerHTML = `<h3>📂 ${col}</h3>`;
+          container.appendChild(section);
+
+          snapshot.forEach(async (doc) => {
+            const data = doc.data();
+            const ts = data["ประทับเวลา"];
+            const docDate = new Date(ts.seconds * 1000).toLocaleDateString("th-TH");
+            if (docDate !== date) return;
+
+            const folderId = data["ยูไอดี"];
+            const fileName = data["URL เสียง"];
+            const filePath = `ไฟล์เสียง/${folderId}/${fileName}`;
+            const audioRef = ref(storage, filePath);
+
+            try {
+              const audioURL = await getDownloadURL(audioRef);
+
+              const card = document.createElement("div");
+              card.innerHTML = `
+                <p><b>คำถามที่ ${data["คำถาม"]}</b>: ${data["ข้อความ"]}</p>
+                <audio controls src="${audioURL}"></audio><br>
+                <a href="${audioURL}" download="${fileName}">⬇ ดาวน์โหลด</a>
+              `;
+              section.appendChild(card);
+            } catch (err) {
+              console.error("โหลดไฟล์เสียงล้มเหลว:", err);
+            }
+          });
+        }
+      }
+    }
+
+    window.onload = loadEmails;
+    window.loadDates = loadDates;
+    window.loadAudio = loadAudio;
+  </script>
+</head>
+<body>
+  <h2>📊 Dashboard หัวหน้า</h2>
+
+  <label>เลือกอีเมลพนักงาน:</label>
+  <select id="emailSelect" onchange="loadDates()">
+    <option disabled selected>-- เลือกอีเมล --</option>
+  </select>
+
+  <br><br>
+
+  <label>เลือกวันที่ส่งงาน:</label>
+  <select id="dateSelect" onchange="loadAudio()">
+    <option disabled selected>-- เลือกวันที่ --</option>
+  </select>
+
+  <br><br>
+
+  <div id="audioContainer"></div>
+</body>
+</html>
