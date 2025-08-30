@@ -242,6 +242,7 @@
                             const folderId = data["ยูไอดี"];
                             const fileName = data["URL เสียง"];
                             const filePath = `ไฟล์เสียง/${folderId}/${fileName}`;
+                            console.log("Path ที่โค้ดกำลังจะใช้:", filePath); 
                             const audioRef = ref(storage, filePath);
                             
                             try {
@@ -277,5 +278,6 @@
     </script>
 </body>
 </html>
+
 
 
