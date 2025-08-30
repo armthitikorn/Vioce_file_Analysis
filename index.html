@@ -1,281 +1,435 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard หัวหน้า</title>
-    <style>
-        body { font-family: 'Tahoma', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
-        .container { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h1, h2 { text-align: center; color: #004085; }
-        h3 { color: #0056b3; }
-        .login-container, .dashboard-container { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-        .login-container input, .login-container button { padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
-        .login-container button { background-color: #007bff; color: white; border: none; cursor: pointer; }
-        .login-container button:hover { background-color: #0056b3; }
-        .dashboard-container { display: none; }
-        .audio-item { border-bottom: 1px solid #e0e0e0; padding: 15px 0; }
-        .audio-item:last-child { border-bottom: none; }
-        .error-message { text-align: center; color: red; }
-        .logout-button { background-color: #dc3545; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; margin-top: 20px; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard หัวหน้า</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+        
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --background-color: #f0f2f5;
+            --card-background: #fff;
+            --text-color: #333;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--card-background);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .login-container, .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        input, select, button {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 16px;
+            font-family: 'Sarabun', sans-serif;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            color: white;
+            font-weight: 700;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        #loginButton {
+            background-color: var(--primary-color);
+        }
+        
+        #loginButton:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        #searchButton {
+            background-color: var(--primary-color);
+            margin-top: 15px;
+        }
+        
+        #searchButton:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .dashboard-container { 
+            display: none; 
+            align-items: center;
+        }
+
+        .user-status {
+            text-align: center;
+            color: var(--success-color);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .audio-container {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .audio-item {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .audio-item:last-child {
+            margin-bottom: 0;
+        }
+
+        audio {
+            width: 100%;
+        }
+
+        .audio-link {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            text-align: center;
+        }
+
+        .audio-link:hover {
+            background-color: #5a6268;
+        }
+        
+        .error-message {
+            color: var(--danger-color);
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .logout-button {
+            background-color: var(--danger-color);
+            margin-top: 20px;
+        }
+
+        .logout-button:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📊 Dashboard หัวหน้า</h1>
-        
-        <div id="loginSection" class="login-container">
-            <h2 style="margin-top: 0;">กรุณาเข้าสู่ระบบ</h2>
-            <input type="email" id="loginEmail" placeholder="อีเมล">
-            <input type="password" id="loginPassword" placeholder="รหัสผ่าน">
-            <button id="loginButton">เข้าสู่ระบบ</button>
-            <p id="loginError" class="error-message"></p>
-        </div>
+    <div class="container">
+        <h1>📊 Dashboard หัวหน้า</h1>
+        
+        <div id="loginSection" class="login-container">
+            <h2 style="margin-top: 0;">กรุณาเข้าสู่ระบบ</h2>
+            <div class="input-group">
+                <label for="loginEmail">อีเมล</label>
+                <input type="email" id="loginEmail" placeholder="อีเมล">
+            </div>
+            <div class="input-group">
+                <label for="loginPassword">รหัสผ่าน</label>
+                <input type="password" id="loginPassword" placeholder="รหัสผ่าน">
+            </div>
+            <button id="loginButton">เข้าสู่ระบบ</button>
+            <p id="loginError" class="error-message"></p>
+        </div>
 
-        <div id="dashboardSection" class="dashboard-container">
-            <p id="userStatus" style="text-align: center; color: green;"></p>
-            <label>เลือกอีเมลพนักงาน:</label>
-            <select id="emailSelect"></select>
+        <div id="dashboardSection" class="dashboard-container">
+            <p id="userStatus" class="user-status"></p>
+            <div class="input-group">
+                <label for="emailSelect">เลือกอีเมลพนักงาน:</label>
+                <select id="emailSelect"></select>
+            </div>
+            
+            <div class="input-group">
+                <label for="dateSelect">เลือกวันที่ส่งงาน:</label>
+                <select id="dateSelect"></select>
+            </div>
+            <button id="searchButton" onclick="loadAudio()">ค้นหาไฟล์เสียง</button>
+            
+            <button id="logoutButton" class="logout-button">ออกจากระบบ</button>
 
-            <br>
+            <div id="audioContainer" class="audio-container"></div>
+        </div>
+    </div>
 
-            <label>เลือกวันที่ส่งงาน:</label>
-            <select id="dateSelect"></select>
-            <button onclick="loadAudio()">ค้นหาไฟล์เสียง</button>
-            
-            <button id="logoutButton" class="logout-button">ออกจากระบบ</button>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, query, where, Timestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
-            <div id="audioContainer" style="margin-top: 20px;"></div>
-        </div>
-    </div>
+        // 🔹 Config Firebase ของคุณเอง
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4OrZERUoxWPiShCEWVvz1MK9cYGO3_K8",
+            authDomain: "new-record-3ccd6.firebaseapp.com",
+            projectId: "new-record-3ccd6",
+            storageBucket: "new-record-3ccd6.appspot.com",
+            messagingSenderId: "1065863160189",
+            appId: "1:1065863160189:web:25313e55b0733f5e126c14"
+        };
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, query, where, Timestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
 
-        // 🔹 Config Firebase ของคุณเอง
-        const firebaseConfig = {
-            apiKey: "AIzaSyA4OrZERUoxWPiShCEWVvz1MK9cYGO3_K8",
-            authDomain: "new-record-3ccd6.firebaseapp.com",
-            projectId: "new-record-3ccd6",
-            storageBucket: "new-record-3ccd6.appspot.com",
-            messagingSenderId: "1065863160189",
-            appId: "1:1065863160189:web:25313e55b0733f5e126c14"
-        };
+        // เปลี่ยนเฉพาะ collection ที่ต้องการ
+        const collectionName = "submission Part 1";
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
+        // DOM Elements
+        const loginSection = document.getElementById('loginSection');
+        const dashboardSection = document.getElementById('dashboardSection');
+        const loginEmailInput = document.getElementById('loginEmail');
+        const loginPasswordInput = document.getElementById('loginPassword');
+        const loginButton = document.getElementById('loginButton');
+        const loginError = document.getElementById('loginError');
+        const logoutButton = document.getElementById('logoutButton');
+        const emailSelect = document.getElementById("emailSelect");
+        const dateSelect = document.getElementById("dateSelect");
+        const audioContainer = document.getElementById("audioContainer");
+        const userStatus = document.getElementById("userStatus");
 
-        const collectionNames = [
-            "การส่งงาน_ตอนที่ 1",
-            "การส่งงาน_ตอนที่ 2",
-            "การส่งงาน_ตอนที่ 3"
-        ];
+        // ------------------ Authentication ------------------
+        loginButton.addEventListener('click', async () => {
+            const email = loginEmailInput.value;
+            const password = loginPasswordInput.value;
+            loginError.textContent = '';
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                loginError.textContent = "ล็อกอินไม่สำเร็จ: " + error.message;
+            }
+        });
 
-        // DOM Elements
-        const loginSection = document.getElementById('loginSection');
-        const dashboardSection = document.getElementById('dashboardSection');
-        const loginEmailInput = document.getElementById('loginEmail');
-        const loginPasswordInput = document.getElementById('loginPassword');
-        const loginButton = document.getElementById('loginButton');
-        const loginError = document.getElementById('loginError');
-        const logoutButton = document.getElementById('logoutButton');
-        const emailSelect = document.getElementById("emailSelect");
-        const dateSelect = document.getElementById("dateSelect");
-        const audioContainer = document.getElementById("audioContainer");
-        const userStatus = document.getElementById("userStatus");
+        logoutButton.addEventListener('click', async () => {
+            await signOut(auth);
+        });
 
-        // ------------------ Authentication ------------------
-        loginButton.addEventListener('click', async () => {
-            const email = loginEmailInput.value;
-            const password = loginPasswordInput.value;
-            loginError.textContent = '';
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                loginError.textContent = "ล็อกอินไม่สำเร็จ: " + error.message;
-            }
-        });
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginSection.style.display = 'none';
+                dashboardSection.style.display = 'flex';
+                dashboardSection.style.flexDirection = 'column';
+                userStatus.textContent = `เข้าสู่ระบบในฐานะ: ${user.email}`;
+                loadEmails();
+            } else {
+                loginSection.style.display = 'flex';
+                dashboardSection.style.display = 'none';
+                audioContainer.innerHTML = '';
+            }
+        });
 
-        logoutButton.addEventListener('click', async () => {
-            await signOut(auth);
-        });
+        // ------------------ Data Loading Functions ------------------
+        async function loadEmails() {
+            emailSelect.innerHTML = '<option value="" disabled selected>-- กำลังโหลดอีเมล --</option>';
+            emailSelect.disabled = true;
+            let emails = new Set();
+            try {
+                const submissionsRef = collection(db, collectionName);
+                const snapshot = await getDocs(submissionsRef);
+                snapshot.forEach(doc => {
+                    const email = doc.data()["อีเมล"];
+                    if (email) emails.add(email);
+                });
+                
+                if (emails.size === 0) {
+                    emailSelect.innerHTML = '<option value="" disabled selected>-- ไม่พบอีเมล --</option>';
+                    audioContainer.innerHTML = '<p class="error-message">ไม่พบข้อมูลอีเมลในคอลเลกชัน ' + collectionName + '</p>';
+                    return;
+                }
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                loginSection.style.display = 'none';
-                dashboardSection.style.display = 'flex';
-                dashboardSection.style.flexDirection = 'column'; // Add this line to fix flex direction
-                userStatus.textContent = `เข้าสู่ระบบในฐานะ: ${user.email}`;
-                loadEmails();
-            } else {
-                loginSection.style.display = 'flex';
-                dashboardSection.style.display = 'none';
-                audioContainer.innerHTML = '';
-            }
-        });
+                emailSelect.innerHTML = '<option value="" disabled selected>-- เลือกอีเมล --</option>';
+                emails.forEach(email => {
+                    const opt = document.createElement("option");
+                    opt.value = email;
+                    opt.textContent = email;
+                    emailSelect.appendChild(opt);
+                });
+                emailSelect.disabled = false;
+            } catch (err) {
+                emailSelect.innerHTML = '<option value="" disabled selected>เกิดข้อผิดพลาด</option>';
+                audioContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดอีเมล</p>';
+                console.error("Load emails error:", err);
+            }
+        }
 
-        // ------------------ Data Loading Functions ------------------
-        async function loadEmails() {
-            emailSelect.innerHTML = '<option value="" disabled selected>-- กำลังโหลดอีเมล --</option>';
-            emailSelect.disabled = true;
-            let emails = new Set();
-            try {
-                // Fetch emails from all collections
-                for (let col of collectionNames) {
-                    const submissionsRef = collection(db, col);
-                    const snapshot = await getDocs(submissionsRef);
-                    snapshot.forEach(doc => {
-                        const email = doc.data()["อีเมล"];
-                        if (email) emails.add(email);
-                    });
-                }
-                
-                if (emails.size === 0) {
-                    emailSelect.innerHTML = '<option value="" disabled selected>-- ไม่พบอีเมล --</option>';
-                    audioContainer.innerHTML = '<p class="error-message">ไม่พบข้อมูลอีเมล</p>';
-                    return;
-                }
+        emailSelect.addEventListener('change', () => {
+            dateSelect.innerHTML = '<option value="" disabled selected>-- เลือกวันที่ --</option>';
+            audioContainer.innerHTML = '';
+            loadDates(emailSelect.value);
+        });
 
-                emailSelect.innerHTML = '<option value="" disabled selected>-- เลือกอีเมล --</option>';
-                emails.forEach(email => {
-                    const opt = document.createElement("option");
-                    opt.value = email;
-                    opt.textContent = email;
-                    emailSelect.appendChild(opt);
-                });
-                emailSelect.disabled = false;
-            } catch (err) {
-                emailSelect.innerHTML = '<option value="" disabled selected>เกิดข้อผิดพลาด</option>';
-                audioContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดอีเมล</p>';
-                console.error("Load emails error:", err);
-            }
-        }
+        async function loadDates(email) {
+            dateSelect.innerHTML = '<option value="" disabled selected>-- กำลังโหลดวันที่ --</option>';
+            dateSelect.disabled = true;
+            let dates = new Set();
+            try {
+                const q = query(collection(db, collectionName), where("อีเมล", "==", email));
+                const snapshot = await getDocs(q);
+                snapshot.forEach(doc => {
+                    const ts = doc.data()["ประทับเวลา"];
+                    if (ts instanceof Timestamp) {
+                        const date = new Date(ts.seconds * 1000).toLocaleDateString("th-TH");
+                        dates.add(date);
+                    }
+                });
 
-        // **แก้ไขโค้ดส่วนนี้**
-        emailSelect.addEventListener('change', () => {
-            dateSelect.innerHTML = '<option value="" disabled selected>-- เลือกวันที่ --</option>';
-            audioContainer.innerHTML = '';
-            loadDates(emailSelect.value);
-        });
+                dateSelect.innerHTML = '<option value="" disabled selected>-- เลือกวันที่ --</option>';
+                if (dates.size > 0) {
+                    dates.forEach(date => {
+                        const opt = document.createElement("option");
+                        opt.value = date;
+                        opt.textContent = date;
+                        dateSelect.appendChild(opt);
+                    });
+                } else {
+                    dateSelect.innerHTML = '<option value="" disabled selected>ไม่พบวันที่</p>';
+                }
+                dateSelect.disabled = false;
+            } catch (err) {
+                dateSelect.innerHTML = '<option value="" disabled selected>เกิดข้อผิดพลาด</p>';
+                console.error("Load dates error:", err);
+            }
+        }
 
-        async function loadDates(email) {
-            dateSelect.innerHTML = '<option value="" disabled selected>-- กำลังโหลดวันที่ --</option>';
-            dateSelect.disabled = true;
-            let dates = new Set();
-            try {
-                for (let col of collectionNames) {
-                    const q = query(collection(db, col), where("อีเมล", "==", email));
-                    const snapshot = await getDocs(q);
-                    snapshot.forEach(doc => {
-                        const ts = doc.data()["ประทับเวลา"];
-                        if (ts instanceof Timestamp) {
-                            const date = new Date(ts.seconds * 1000).toLocaleDateString("th-TH");
-                            dates.add(date);
-                        }
-                    });
-                }
+        window.loadAudio = async function() {
+            const email = emailSelect.value;
+            const dateStr = dateSelect.value;
+            if (!email || !dateStr) {
+                audioContainer.innerHTML = '<p class="error-message">กรุณาเลือกอีเมลและวันที่ให้ครบถ้วน</p>';
+                return;
+            }
+            audioContainer.innerHTML = '<p style="text-align: center;">กำลังค้นหาไฟล์เสียง...</p>';
 
-                dateSelect.innerHTML = '<option value="" disabled selected>-- เลือกวันที่ --</option>';
-                if (dates.size > 0) {
-                    dates.forEach(date => {
-                        const opt = document.createElement("option");
-                        opt.value = date;
-                        opt.textContent = date;
-                        dateSelect.appendChild(opt);
-                    });
-                } else {
-                    dateSelect.innerHTML = '<option value="" disabled selected>ไม่พบวันที่</option>';
-                }
-                dateSelect.disabled = false;
-            } catch (err) {
-                dateSelect.innerHTML = '<option value="" disabled selected>เกิดข้อผิดพลาด</option>';
-                console.error("Load dates error:", err);
-            }
-        }
+            const [day, month, year] = dateStr.split('/');
+            const selectedDate = new Date(`${year}-${month}-${day}`);
+            const startOfDay = Timestamp.fromDate(new Date(selectedDate.setHours(0, 0, 0, 0)));
+            const endOfDay = Timestamp.fromDate(new Date(selectedDate.setHours(23, 59, 59, 999)));
 
-        window.loadAudio = async function() {
-            const email = emailSelect.value;
-            const dateStr = dateSelect.value;
-            if (!email || !dateStr) {
-                audioContainer.innerHTML = '<p class="error-message">กรุณาเลือกอีเมลและวันที่ให้ครบถ้วน</p>';
-                return;
-            }
-            audioContainer.innerHTML = '<p style="text-align: center;">กำลังค้นหาไฟล์เสียง...</p>';
+            try {
+                let foundAudios = false;
+                audioContainer.innerHTML = '';
+                
+                const q = query(
+                    collection(db, collectionName),
+                    where("อีเมล", "==", email),
+                    where("ประทับเวลา", ">=", startOfDay),
+                    where("ประทับเวลา", "<=", endOfDay)
+                );
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    foundAudios = true;
+                    const section = document.createElement("div");
+                    section.innerHTML = `<h3>📂 ${collectionName}</h3>`;
+                    audioContainer.appendChild(section);
 
-            const [day, month, year] = dateStr.split('/');
-            const selectedDate = new Date(`${year}-${month}-${day}`);
-            const startOfDay = Timestamp.fromDate(new Date(selectedDate.setHours(0, 0, 0, 0)));
-            const endOfDay = Timestamp.fromDate(new Date(selectedDate.setHours(23, 59, 59, 999)));
+                    const audioItems = [];
+                    snapshot.forEach(doc => {
+                        audioItems.push(doc.data());
+                    });
+                    
+                    // Sort audio items by question number
+                    audioItems.sort((a, b) => (a["คำถาม"] || 0) - (b["คำถาม"] || 0));
 
-            try {
-                let foundAudios = false;
-                audioContainer.innerHTML = '';
-                
-                for (let col of collectionNames) {
-                    const q = query(
-                        collection(db, col),
-                        where("อีเมล", "==", email),
-                        where("ประทับเวลา", ">=", startOfDay),
-                        where("ประทับเวลา", "<=", endOfDay)
-                    );
-                    const snapshot = await getDocs(q);
-                    
-                    if (!snapshot.empty) {
-                        foundAudios = true;
-                        const section = document.createElement("div");
-                        section.innerHTML = `<h3>📂 ${col}</h3>`;
-                        audioContainer.appendChild(section);
+                    for (const data of audioItems) {
+                        const folderId = data["ยูไอดี"];
+                        const fileName = data["URL เสียง"];
+                        const filePath = `ไฟล์เสียง/${folderId}/${fileName}`;
+                        console.log("Path ที่โค้ดกำลังจะใช้:", filePath);
+                        const audioRef = ref(storage, filePath);
+                        
+                        try {
+                            const audioURL = await getDownloadURL(audioRef);
+                            const card = document.createElement("div");
+                            card.className = 'audio-item';
+                            card.innerHTML = `
+                                <p><b>คำถามที่ ${data["คำถาม"] || 'N/A'}</b>: ${data["ข้อความ"] || 'ไม่มีข้อความ'}</p>
+                                <audio controls src="${audioURL}"></audio><br>
+                                <a href="${audioURL}" download="${fileName}" class="audio-link">⬇ ดาวน์โหลด</a>
+                            `;
+                            section.appendChild(card);
+                        } catch (err) {
+                            console.error(`โหลดไฟล์เสียง ${fileName} ล้มเหลว:`, err);
+                            const errorCard = document.createElement("p");
+                            errorCard.className = 'error-message';
+                            errorCard.textContent = `ไม่พบไฟล์เสียงสำหรับคำถามที่ ${data["คำถาม"] || 'N/A'}`;
+                            section.appendChild(errorCard);
+                        }
+                    }
+                }
 
-                        const audioItems = [];
-                        snapshot.forEach(doc => {
-                            audioItems.push(doc.data());
-                        });
-                        
-                        // Sort audio items by question number
-                        audioItems.sort((a, b) => (a["คำถาม"] || 0) - (b["คำถาม"] || 0));
+                if (!foundAudios) {
+                    audioContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงสำหรับอีเมลนี้ในวันที่เลือก</p>';
+                }
 
-                        for (const data of audioItems) {
-                            const folderId = data["ยูไอดี"];
-                            const fileName = data["URL เสียง"];
-                            const filePath = `ไฟล์เสียง/${folderId}/${fileName}`;
-                            console.log("Path ที่โค้ดกำลังจะใช้:", filePath);
-                            const audioRef = ref(storage, filePath);
-                            
-                            try {
-                                const audioURL = await getDownloadURL(audioRef);
-                                const card = document.createElement("div");
-                                card.className = 'audio-item';
-                                card.innerHTML = `
-                                    <p><b>คำถามที่ ${data["คำถาม"] || 'N/A'}</b>: ${data["ข้อความ"] || 'ไม่มีข้อความ'}</p>
-                                    <audio controls src="${audioURL}"></audio><br>
-                                    <a href="${audioURL}" download="${fileName}">⬇ ดาวน์โหลด</a>
-                                `;
-                                section.appendChild(card);
-                            } catch (err) {
-                                console.error(`โหลดไฟล์เสียง ${fileName} ล้มเหลว:`, err);
-                                const errorCard = document.createElement("p");
-                                errorCard.className = 'error-message';
-                                errorCard.textContent = `ไม่พบไฟล์เสียงสำหรับคำถามที่ ${data["คำถาม"] || 'N/A'}`;
-                                section.appendChild(errorCard);
-                            }
-                        }
-                    }
-                }
-
-                if (!foundAudios) {
-                    audioContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงสำหรับอีเมลนี้ในวันที่เลือก</p>';
-                }
-
-            } catch (err) {
-                console.error("เกิดข้อผิดพลาดในการค้นหา:", err);
-                audioContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
-            }
-        }
-    </script>
+            } catch (err) {
+                console.error("เกิดข้อผิดพลาดในการค้นหา:", err);
+                audioContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
+            }
+        }
+    </script>
 </body>
 </html>
