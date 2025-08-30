@@ -3,177 +3,415 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เข้าสู่ระบบ / ลงทะเบียน</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2vK/lV8f7xW3m5M1Zc6p9z2w1yT4fF/r5m1v3i4f8O/1Z+6h+5v+2/4g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>Dashboard สำหรับผู้ดูแล</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+        
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --background-color: #f0f2f5;
+            --card-background: #fff;
+            --text-color: #333;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
         body {
-            font-family: 'Tahoma', sans-serif;
-            background: #f0f2f5;
-            padding: 20px;
-            color: #333;
+            font-family: 'Sarabun', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-color);
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
         }
-        .auth-container {
-            max-width: 500px;
+
+        .container {
             width: 100%;
-            background: #fff;
-            padding: 30px;
+            max-width: 800px;
+            background-color: var(--card-background);
+            padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        input {
-            display: block;
-            width: 100%;
-            margin-bottom: 15px;
-            padding: 12px;
-            border: 1px solid #ced4da;
-            border-radius: 8px;
-            font-size: 1em;
-            box-sizing: border-box;
-        }
-        .auth-container h2 {
+            box-shadow: var(--shadow);
             text-align: center;
-            color: #0056b3;
+        }
+
+        h1 {
+            color: var(--primary-color);
             margin-top: 0;
             margin-bottom: 20px;
+            font-weight: 700;
         }
-        button {
+
+        .login-container, .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        input, select, button {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
             width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            font-family: 'Sarabun', sans-serif;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        button {
             cursor: pointer;
-            font-size: 1.2em;
-            font-weight: bold;
+            border: none;
             color: white;
-            background-color: #007bff;
-            transition: background-color 0.3s ease;
+            font-weight: 700;
+            transition: background-color 0.3s, transform 0.1s;
         }
-        button:hover {
+
+        #loginButton {
+            background-color: var(--primary-color);
+        }
+        
+        #loginButton:hover {
             background-color: #0056b3;
+            transform: translateY(-2px);
         }
-        .register-btn {
-            background-color: #28a745;
+
+        #searchButton {
+            background-color: var(--primary-color);
+            margin-top: 15px;
         }
-        .register-btn:hover {
-            background-color: #218838;
+        
+        #searchButton:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
         }
-        .message-box {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #d1e7dd;
-            color: #0f5132;
-            border: 1px solid #badbcc;
-            padding: 15px;
+
+        .dashboard-container { 
+            display: none; 
+            align-items: center;
+        }
+
+        .user-status {
+            text-align: center;
+            color: var(--success-color);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .audio-container {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        .audio-item {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            display: none;
-            z-index: 1000;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .audio-item:last-child {
+            margin-bottom: 0;
+        }
+
+        audio {
+            width: 100%;
+        }
+
+        .audio-link {
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: background-color 0.3s;
+            text-align: center;
+        }
+
+        .audio-link:hover {
+            background-color: #5a6268;
+        }
+        
+        .error-message {
+            color: var(--danger-color);
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .logout-button {
+            background-color: var(--danger-color);
+            margin-top: 20px;
+        }
+
+        .logout-button:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
         }
     </style>
 </head>
 <body>
-    <div id="messageBox" class="message-box"></div>
+    <div class="container">
+        <h1>📊 Dashboard สำหรับผู้ดูแล</h1>
+        
+        <div id="loginSection" class="login-container">
+            <h2 style="margin-top: 0;">กรุณาเข้าสู่ระบบ</h2>
+            <div class="input-group">
+                <label for="loginEmail">อีเมล</label>
+                <input type="email" id="loginEmail" placeholder="อีเมล">
+            </div>
+            <div class="input-group">
+                <label for="loginPassword">รหัสผ่าน</label>
+                <input type="password" id="loginPassword" placeholder="รหัสผ่าน">
+            </div>
+            <button id="loginButton">เข้าสู่ระบบ</button>
+            <p id="loginError" class="error-message"></p>
+        </div>
 
-    <!-- Auth Section -->
-    <div class="auth-container">
-        <h2>เข้าสู่ระบบ</h2>
-        <input type="email" id="loginEmail" placeholder="Email">
-        <input type="password" id="loginPassword" placeholder="Password">
-        <button id="loginBtn">เข้าสู่ระบบ</button>
-        <p style="text-align: center; margin: 20px 0;">หรือ</p>
-        <h2>ลงทะเบียน</h2>
-        <input type="email" id="registerEmail" placeholder="Email">
-        <input type="password" id="registerPassword" placeholder="Password">
-        <button id="registerBtn" class="register-btn">ลงทะเบียน</button>
+        <div id="dashboardSection" class="dashboard-container">
+            <p id="userStatus" class="user-status"></p>
+            <div class="input-group">
+                <label for="employeeEmailInput">กรอกอีเมลพนักงาน:</label>
+                <input type="email" id="employeeEmailInput" placeholder="กรอกอีเมลที่นี่">
+            </div>
+            
+            <div class="input-group">
+                <label for="dateSelect">เลือกวันที่ส่งงาน:</label>
+                <select id="dateSelect"></select>
+            </div>
+
+            <div class="input-group">
+                <label for="partSelect">เลือกส่วนของงาน:</label>
+                <select id="partSelect">
+                    <option value="" disabled selected>-- เลือกส่วนของงาน --</option>
+                    <option value="submissions_part1">Part 1</option>
+                    <option value="submissions_part2">Part 2</option>
+                    <option value="submissions_part3">Part 3</option>
+                </select>
+            </div>
+            <button id="searchButton">ค้นหาไฟล์เสียง</button>
+            
+            <button id="logoutButton" class="logout-button">ออกจากระบบ</button>
+
+            <div id="audioContainer" class="audio-container"></div>
+        </div>
     </div>
 
     <script type="module">
-        // Import Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, query, where, Timestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
-        // Show a custom message box instead of alert()
-        function showMessage(text, type = 'info') {
-            const messageBox = document.getElementById('messageBox');
-            messageBox.textContent = text;
-            messageBox.style.display = 'block';
-            if (type === 'error') {
-                messageBox.style.backgroundColor = '#f8d7da';
-                messageBox.style.color = '#721c24';
-                messageBox.style.borderColor = '#f5c6cb';
-            } else {
-                messageBox.style.backgroundColor = '#d1e7dd';
-                messageBox.style.color = '#0f5132';
-                messageBox.style.borderColor = '#badbcc';
-            }
-            setTimeout(() => {
-                messageBox.style.display = 'none';
-            }, 3000);
-        }
-
-        // Firebase configuration (replace with your own)
+        // 🔹 Config Firebase ของคุณเอง
         const firebaseConfig = {
-            apiKey: "AIzaSyA4OrZERUoxWPiShCEWVvz1MK9cYGO3_K8",
-            authDomain: "new-record-3ccd6.firebaseapp.com",
-            projectId: "new-record-3ccd6",
-            storageBucket: "new-record-3ccd6.appspot.com",
-            messagingSenderId: "1065863160189",
-            appId: "1:1065863160189:web:25313e55b0733f5e126c14",
-            measurementId: "G-JW6N2HYR58"
+        apiKey: "AIzaSyA4OrZERUoxWPiShCEWVvz1MK9cYGO3_K8",
+        authDomain: "new-record-3ccd6.firebaseapp.com",
+        databaseURL: "https://new-record-3ccd6-default-rtdb.firebaseio.com",
+        projectId: "new-record-3ccd6",
+        storageBucket: "new-record-3ccd6.firebasestorage.app",
+        messagingSenderId: "1065863160189",
+        appId: "1:1065863160189:web:853d594b8d17adff126c14",
+        measurementId: "G-ZY9B2K18X3"
         };
 
-        // Initialize Firebase app and auth
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
 
-        // Event listener for register button
-        document.getElementById('registerBtn').addEventListener('click', async () => {
-            const email = document.getElementById('registerEmail').value;
-            const password = document.getElementById('registerPassword').value;
+        // DOM Elements
+        const loginSection = document.getElementById('loginSection');
+        const dashboardSection = document.getElementById('dashboardSection');
+        const loginEmailInput = document.getElementById('loginEmail');
+        const loginPasswordInput = document.getElementById('loginPassword');
+        const loginButton = document.getElementById('loginButton');
+        const loginError = document.getElementById('loginError');
+        const logoutButton = document.getElementById('logoutButton');
+        const employeeEmailInput = document.getElementById("employeeEmailInput");
+        const dateSelect = document.getElementById("dateSelect");
+        const partSelect = document.getElementById("partSelect");
+        const audioContainer = document.getElementById("audioContainer");
+        const userStatus = document.getElementById("userStatus");
+        const searchButton = document.getElementById("searchButton");
 
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-                showMessage("ลงทะเบียนสำเร็จ! สามารถเข้าสู่ระบบได้เลย", "info");
-            } catch (error) {
-                console.error("Registration error:", error);
-                showMessage(error.message, "error");
-            }
-        });
-
-        // Event listener for login button
-        document.getElementById('loginBtn').addEventListener('click', async () => {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-
+        // ------------------ Authentication ------------------
+        loginButton.addEventListener('click', async () => {
+            const email = loginEmailInput.value;
+            const password = loginPasswordInput.value;
+            loginError.textContent = '';
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                showMessage("เข้าสู่ระบบสำเร็จ! กำลังนำทาง...", "info");
-                // Redirect to the voice test page on successful login
-                setTimeout(() => {
-                    window.location.href = "index01.html";
-                }, 2000);
             } catch (error) {
-                console.error("Login error:", error);
-                showMessage(error.message, "error");
+                loginError.textContent = "ล็อกอินไม่สำเร็จ: " + error.message;
             }
         });
+
+        logoutButton.addEventListener('click', async () => {
+            await signOut(auth);
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginSection.style.display = 'none';
+                dashboardSection.style.display = 'flex';
+                dashboardSection.style.flexDirection = 'column';
+                userStatus.textContent = `เข้าสู่ระบบในฐานะ: ${user.email}`;
+            } else {
+                loginSection.style.display = 'flex';
+                dashboardSection.style.display = 'none';
+                audioContainer.innerHTML = '';
+            }
+        });
+        
+        // ------------------ Data Loading Functions ------------------
+        employeeEmailInput.addEventListener('input', () => {
+            const email = employeeEmailInput.value;
+            if (email) {
+                loadDates(email);
+            } else {
+                dateSelect.innerHTML = '<option value="" disabled selected>กรอกอีเมลเพื่อเลือกวันที่</option>';
+                dateSelect.disabled = true;
+                audioContainer.innerHTML = '';
+            }
+        });
+
+        searchButton.addEventListener('click', async () => {
+            const email = employeeEmailInput.value;
+            const dateStr = dateSelect.value;
+            const part = partSelect.value;
+            
+            if (!email || !dateStr || !part) {
+                audioContainer.innerHTML = '<p class="error-message">กรุณากรอกอีเมลและเลือกวันที่/ส่วนของงานให้ครบถ้วน</p>';
+                return;
+            }
+
+            audioContainer.innerHTML = '<p style="text-align: center;">กำลังค้นหาไฟล์เสียง...</p>';
+
+            const [day, month, year] = dateStr.split('/');
+            const selectedDate = new Date(`${year}-${month}-${day}`);
+            const startOfDay = Timestamp.fromDate(new Date(selectedDate.setHours(0, 0, 0, 0)));
+            const endOfDay = Timestamp.fromDate(new Date(selectedDate.setHours(23, 59, 59, 999)));
+
+            try {
+                let foundAudios = false;
+                audioContainer.innerHTML = '';
+                
+                const q = query(
+                    collection(db, part),
+                    where("email", "==", email),
+                    where("timestamp", ">=", startOfDay),
+                    where("timestamp", "<=", endOfDay)
+                );
+                const snapshot = await getDocs(q);
+                
+                if (!snapshot.empty) {
+                    foundAudios = true;
+                    const section = document.createElement("div");
+                    section.innerHTML = `<h3>📂 ${part}</h3>`;
+                    audioContainer.appendChild(section);
+
+                    const audioItems = [];
+                    snapshot.forEach(doc => {
+                        audioItems.push(doc.data());
+                    });
+                    
+                    audioItems.sort((a, b) => (a.question || 0) - (b.question || 0));
+
+                    for (const data of audioItems) {
+                        const question = data.text || 'ไม่มีข้อความ';
+                        const audioURL = data.audioUrl;
+                        
+                        if (audioURL) {
+                            const card = document.createElement("div");
+                            card.className = 'audio-item';
+                            card.innerHTML = `
+                                <p><b>คำถามที่ ${data.question || 'N/A'}</b>: ${question}</p>
+                                <audio controls src="${audioURL}"></audio><br>
+                                <a href="${audioURL}" download="${data.uid}_${part}_answer${data.question}.mp4" class="audio-link">⬇ ดาวน์โหลด</a>
+                            `;
+                            section.appendChild(card);
+                        } else {
+                            const errorCard = document.createElement("p");
+                            errorCard.className = 'error-message';
+                            errorCard.textContent = `ไม่พบไฟล์เสียงสำหรับคำถามที่ ${data.question || 'N/A'}`;
+                            section.appendChild(errorCard);
+                        }
+                    }
+                }
+
+                if (!foundAudios) {
+                    audioContainer.innerHTML = '<p style="text-align: center;">ไม่พบไฟล์เสียงสำหรับอีเมลนี้ในวันที่เลือก</p>';
+                }
+
+            } catch (err) {
+                console.error("เกิดข้อผิดพลาดในการค้นหา:", err);
+                audioContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
+            }
+        });
+
+        async function loadDates(email) {
+            dateSelect.innerHTML = '<option value="" disabled selected>-- กำลังโหลดวันที่ --</option>';
+            dateSelect.disabled = true;
+            let dates = new Set();
+            try {
+                 const collections = ["submissions_part1", "submissions_part2", "submissions_part3"];
+                for (const col of collections) {
+                    const q = query(collection(db, col), where("email", "==", email));
+                    const snapshot = await getDocs(q);
+                    snapshot.forEach(doc => {
+                        const ts = doc.data().timestamp;
+                        if (ts instanceof Timestamp) {
+                            const date = new Date(ts.seconds * 1000).toLocaleDateString("th-TH");
+                            dates.add(date);
+                        }
+                    });
+                }
+
+                dateSelect.innerHTML = '<option value="" disabled selected>-- เลือกวันที่ --</option>';
+                if (dates.size > 0) {
+                    dates.forEach(date => {
+                        const opt = document.createElement("option");
+                        opt.value = date;
+                        opt.textContent = date;
+                        dateSelect.appendChild(opt);
+                    });
+                } else {
+                    dateSelect.innerHTML = '<option value="" disabled selected>ไม่พบวันที่</p>';
+                }
+                dateSelect.disabled = false;
+            } catch (err) {
+                dateSelect.innerHTML = '<option value="" disabled selected>เกิดข้อผิดพลาด</p>';
+                console.error("Load dates error:", err);
+            }
+        }
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
