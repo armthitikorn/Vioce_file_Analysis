@@ -13,7 +13,7 @@
         .login-container input, .login-container button { padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
         .login-container button { background-color: #007bff; color: white; border: none; cursor: pointer; }
         .login-container button:hover { background-color: #0056b3; }
-        .dashboard-container { display: none; } /* ซ่อน dashboard ตอนแรก */
+        .dashboard-container { display: none; }
         .audio-item { border-bottom: 1px solid #e0e0e0; padding: 15px 0; }
         .audio-item:last-child { border-bottom: none; }
         .error-message { text-align: center; color: red; }
@@ -107,13 +107,12 @@
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // User is signed in, show dashboard
                 loginSection.style.display = 'none';
                 dashboardSection.style.display = 'flex';
+                dashboardSection.style.flexDirection = 'column'; // Add this line to fix flex direction
                 userStatus.textContent = `เข้าสู่ระบบในฐานะ: ${user.email}`;
                 loadEmails();
             } else {
-                // User is signed out, show login screen
                 loginSection.style.display = 'flex';
                 dashboardSection.style.display = 'none';
                 audioContainer.innerHTML = '';
@@ -126,15 +125,18 @@
             emailSelect.disabled = true;
             let emails = new Set();
             try {
-                // ดึงอีเมลจาก collection แรก
-                const q = query(collection(db, collectionNames[0]));
-                const snapshot = await getDocs(q);
-                snapshot.forEach(doc => {
-                    const email = doc.data()["อีเมล"];
-                    if (email) emails.add(email);
-                });
-
+                // Fetch emails from all collections
+                for (let col of collectionNames) {
+                    const submissionsRef = collection(db, col);
+                    const snapshot = await getDocs(submissionsRef);
+                    snapshot.forEach(doc => {
+                        const email = doc.data()["อีเมล"];
+                        if (email) emails.add(email);
+                    });
+                }
+                
                 if (emails.size === 0) {
+                    emailSelect.innerHTML = '<option value="" disabled selected>-- ไม่พบอีเมล --</option>';
                     audioContainer.innerHTML = '<p class="error-message">ไม่พบข้อมูลอีเมล</p>';
                     return;
                 }
@@ -148,12 +150,15 @@
                 });
                 emailSelect.disabled = false;
             } catch (err) {
+                emailSelect.innerHTML = '<option value="" disabled selected>เกิดข้อผิดพลาด</option>';
                 audioContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดอีเมล</p>';
                 console.error("Load emails error:", err);
             }
         }
 
         emailSelect.addEventListener('change', () => {
+            dateSelect.innerHTML = '<option value="" disabled selected>-- เลือกวันที่ --</option>';
+            audioContainer.innerHTML = '';
             loadDates(emailSelect.value);
         });
 
@@ -162,7 +167,6 @@
             dateSelect.disabled = true;
             let dates = new Set();
             try {
-                // ค้นหาเฉพาะ collection ที่มีอีเมลนี้
                 for (let col of collectionNames) {
                     const q = query(collection(db, col), where("อีเมล", "==", email));
                     const snapshot = await getDocs(q);
@@ -209,8 +213,8 @@
 
             try {
                 let foundAudios = false;
-                audioContainer.innerHTML = ''; // Clear container before adding new results
-
+                audioContainer.innerHTML = '';
+                
                 for (let col of collectionNames) {
                     const q = query(
                         collection(db, col),
@@ -226,8 +230,15 @@
                         section.innerHTML = `<h3>📂 ${col}</h3>`;
                         audioContainer.appendChild(section);
 
-                        snapshot.forEach(async (doc) => {
-                            const data = doc.data();
+                        const audioItems = [];
+                        snapshot.forEach(doc => {
+                            audioItems.push(doc.data());
+                        });
+                        
+                        // Sort audio items by question number
+                        audioItems.sort((a, b) => (a["คำถาม"] || 0) - (b["คำถาม"] || 0));
+
+                        for (const data of audioItems) {
                             const folderId = data["ยูไอดี"];
                             const fileName = data["URL เสียง"];
                             const filePath = `ไฟล์เสียง/${folderId}/${fileName}`;
@@ -250,7 +261,7 @@
                                 errorCard.textContent = `ไม่พบไฟล์เสียงสำหรับคำถามที่ ${data["คำถาม"] || 'N/A'}`;
                                 section.appendChild(errorCard);
                             }
-                        });
+                        }
                     }
                 }
 
@@ -266,4 +277,5 @@
     </script>
 </body>
 </html>
+
 
