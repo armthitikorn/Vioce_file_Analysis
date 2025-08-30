@@ -198,8 +198,8 @@
         <div id="dashboardSection" class="dashboard-container">
             <p id="userStatus" class="user-status"></p>
             <div class="input-group">
-                <label for="emailSelect">เลือกอีเมลพนักงาน:</label>
-                <select id="emailSelect"></select>
+                <label for="employeeEmailInput">กรอกอีเมลพนักงาน:</label>
+                <input type="email" id="employeeEmailInput" placeholder="กรอกอีเมลที่นี่">
             </div>
             
             <div class="input-group">
@@ -253,7 +253,7 @@
         const loginButton = document.getElementById('loginButton');
         const loginError = document.getElementById('loginError');
         const logoutButton = document.getElementById('logoutButton');
-        const emailSelect = document.getElementById("emailSelect");
+        const employeeEmailInput = document.getElementById("employeeEmailInput");
         const dateSelect = document.getElementById("dateSelect");
         const partSelect = document.getElementById("partSelect");
         const audioContainer = document.getElementById("audioContainer");
@@ -290,15 +290,24 @@
         });
         
         // ------------------ Data Loading Functions ------------------
+        employeeEmailInput.addEventListener('input', () => {
+            const email = employeeEmailInput.value;
+            if (email) {
+                loadDates(email);
+            } else {
+                dateSelect.innerHTML = '<option value="" disabled selected>กรอกอีเมลเพื่อเลือกวันที่</option>';
+                dateSelect.disabled = true;
+                audioContainer.innerHTML = '';
+            }
+        });
 
-        // เพิ่ม Event Listener ให้กับ searchButton
         searchButton.addEventListener('click', async () => {
-            const email = emailSelect.value;
+            const email = employeeEmailInput.value;
             const dateStr = dateSelect.value;
             const part = partSelect.value;
             
             if (!email || !dateStr || !part) {
-                audioContainer.innerHTML = '<p class="error-message">กรุณาเลือกอีเมล วันที่ และส่วนของงานให้ครบถ้วน</p>';
+                audioContainer.innerHTML = '<p class="error-message">กรุณากรอกอีเมลและเลือกวันที่/ส่วนของงานให้ครบถ้วน</p>';
                 return;
             }
 
@@ -364,50 +373,6 @@
                 console.error("เกิดข้อผิดพลาดในการค้นหา:", err);
                 audioContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>';
             }
-        });
-
-        // ฟังก์ชันสำหรับโหลดอีเมลและวันที่ (มีการปรับปรุง)
-        async function loadEmails() {
-            emailSelect.innerHTML = '<option value="" disabled selected>-- กำลังโหลดอีเมล --</option>';
-            emailSelect.disabled = true;
-            let emails = new Set();
-            try {
-                // โหลดจากทุก collection ที่เกี่ยวข้อง
-                const collections = ["submissions_part1", "submissions_part2", "submissions_part3"];
-                for (const col of collections) {
-                    const snapshot = await getDocs(collection(db, col));
-                    snapshot.forEach(doc => {
-                        const email = doc.data().email;
-                        if (email) emails.add(email);
-                    });
-                }
-                
-                if (emails.size === 0) {
-                    emailSelect.innerHTML = '<option value="" disabled selected>-- ไม่พบอีเมล --</option>';
-                    audioContainer.innerHTML = '<p class="error-message">ไม่พบข้อมูลอีเมลในระบบ</p>';
-                    return;
-                }
-
-                emailSelect.innerHTML = '<option value="" disabled selected>-- เลือกอีเมล --</option>';
-                emails.forEach(email => {
-                    const opt = document.createElement("option");
-                    opt.value = email;
-                    opt.textContent = email;
-                    emailSelect.appendChild(opt);
-                });
-                emailSelect.disabled = false;
-            } catch (err) {
-                emailSelect.innerHTML = '<option value="" disabled selected>เกิดข้อผิดพลาด</option>';
-                audioContainer.innerHTML = '<p class="error-message">เกิดข้อผิดพลาดในการโหลดอีเมล</p>';
-                console.error("Load emails error:", err);
-            }
-        }
-
-        emailSelect.addEventListener('change', () => {
-            dateSelect.innerHTML = '<option value="" disabled selected>-- เลือกวันที่ --</option>';
-            audioContainer.innerHTML = '';
-            partSelect.value = "";
-            loadDates(emailSelect.value);
         });
 
         async function loadDates(email) {
